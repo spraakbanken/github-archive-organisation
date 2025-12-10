@@ -137,7 +137,9 @@ if __name__ == '__main__':
                 if failed_downloads:
                     with open(attachement_path / "missing_downloads.json", "w") as f:
                         json.dump(failed_downloads, f, indent="\t")
+                # Add issue to list
                 issue_list.append({'issue': issue, 'timeline': flatten([event.json() for event in timeline])})
+            # Write issues to file
             with open(archive_path / "issues.json", "w") as f:
                 json.dump(issue_list, f, indent="\t")
         # 2.2.5 Dump releases
