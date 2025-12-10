@@ -80,9 +80,9 @@ if __name__ == '__main__':
     # 2. Clone repositories and archive organisation
     # 2.1. List all repositories
     
-    # repositories : list[requests.Response] = get_paginated("https://api.github.com/orgs/{}/repos".format(organisation),default_headers)
+    # repositories : list[requests.Response] = get_paginated("https://api.github.com/orgs/{}/repos".format(organisation),headers=default_headers)
     # repository_list : list[dict] = [{'name': repo['name'], 'url': repo['git_url'], 'has_issues': repo['has_issues'], 'has_wiki': repo['has_wiki'], 'json': repo} for response in repositories for repo in response.json() ]
-    repositories : list[requests.Response] = get_paginated("https://api.github.com/repos/spraakbanken/clone-test", default_headers)
+    repositories : list[requests.Response] = get_paginated("https://api.github.com/repos/spraakbanken/clone-test", headers=default_headers)
     repository_list : list[dict] = [{'name': repo['name'], 'url': repo['git_url'], 'has_issues': repo['has_issues'], 'has_wiki': repo['has_wiki'], 'json': repo} for response in repositories for repo in [response.json()] ] 
 
     
@@ -105,16 +105,16 @@ if __name__ == '__main__':
         if repository['has_issues']:
             logger.info("Dump issues for %s", repository['name'])
             # List all issues (both open and closed)
-            issues : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues?state=all".format(organisation, repository['name']), default_headers)
+            issues : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues?state=all".format(organisation, repository['name']), headers=default_headers)
             issue_list : list[dict] = []
             for issue in flatten([issue.json() for issue in issues]):
                 issue_number : int = issue['number']
                 # Get timeline
                 logger.info("Dump timeline for issue %d of %s", issue_number, repository['name'])
-                timeline : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/timeline".format(organisation, repository['name'],issue_number), default_headers)
+                timeline : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/timeline".format(organisation, repository['name'],issue_number), headers=default_headers)
                 # get comments
                 logger.info("Dump comments for issue %d of %s", issue_number, repository['name'])
-                comments : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/comments".format(organisation, repository['name'],issue_number), default_headers)
+                comments : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/comments".format(organisation, repository['name'],issue_number), headers=default_headers)
                 comment_list : list[dict] = flatten([comment.json() for comment in comments])
                 file_link_regex : re.Pattern = re.compile('\\((https://github.com/user-attachments/files/\\d+/([^)]+))\\)')
                 # get attachments
