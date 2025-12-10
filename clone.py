@@ -143,6 +143,29 @@ if __name__ == '__main__':
             with open(archive_path / "issues.json", "w") as f:
                 json.dump(issue_list, f, indent="\t")
         # 2.2.5 Dump releases
+        releases : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/releases".format(organisation, repository['name']), headers=default_headers)
+        for release in [r.json() for r in releases]:
+            failed_downloads: list[dict] = []
+            release_path = archive_path / release['tag']
+            release_path.mkdir(mode=0o755, parents=True, exist_ok=True)
+            # save json
+            with open(archive_path / "releases.json", "w") as f:
+                json.dump(releases, f, indent="\t")
+            # download tarball
+            if not try_download(release['tarball_url'], release_path / release['tag'] + ".tar.gz"):
+                failed_downloads.append({'url': release['tarball_url'], 'file': release['tag'] + ".tar.gz"})
+                # download zip file
+            if not try_download(release['zipball_url'], release_path / release['tag'] + ".zip"):
+                failed_downloads.append({'url': release['zipball_url'], 'file': release['tag'] + ".zip"})
+            # store assets
+            with open(releases_path / "assets.json", "w") as f:
+                json.dump(assets, f, indent="\t")
+            for asset in release['assets']:
+                if not try_download(asset['browser_download_url'], release_path / asset['name']):
+                    failed_downloads.append({'url': release['browser_download_url'], 'file': release['name']})
+            if failed_downloads:
+                with open(release / "missing_downloads.json", "w") as f:
+                    json.dump(failed_downloads, f, indent="\t")
     # 3. Clone projects
     # get releases?
     logger.info("Done")
