@@ -58,6 +58,16 @@ def flatten(in_list : list) -> list:
             out_list.append(element)
     return out_list
 
+def try_download(url : str, outfile : str) -> None:
+    """Try to download a file from an url and keep track of the failures"""
+    logger.info("Try to download file %s to %s", attached_file_url, attached_file_name)
+    result : requests.Result = requests.get(url, headers=default_headers, stream=True)
+    if result.status_code == 200:
+        with open(outfile, "wb") as f:
+            f.write(result.raw.data)
+        return True
+    else:
+        return False
 if __name__ == '__main__':
     # 0. start
     logger.info("Start cloning %s", organisation)
