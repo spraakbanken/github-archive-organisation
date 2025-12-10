@@ -118,19 +118,25 @@ if __name__ == '__main__':
                 comment_list : list[dict] = flatten([comment.json() for comment in comments])
                 file_link_regex : re.Pattern = re.compile('\\((https://github.com/user-attachments/files/\\d+/([^)]+))\\)')
                 # get attachments
-                attachment_list : list[dict] = []
+                attachment_path = archive_path / "attachments"
+                attachment_path.mkdir(mode=0o755, parents=True, exist_ok=True)
+                failed_downloads: list[dict] = []
                 for comment in comment_list:
                     link_match = file_link_regex.search(comment["body"])
+                    attached_file_url = link_match.group(1)
+                    attached_file_name = link_match.group(2)
                     if link_match:
-                        logger.info("Found attached file %s at %s", link_match.group(2), link_match.group(1))
-                        attachment_list.append({'url': link_match.group(1), 'file': link_match.group(2)})
-                if attachment_list:
-                    file_download_path = data_path / "attachments" / repository['name']
-                    file_download_path.mkdir(mode=0o755, parents=True, exist_ok=True)
-                    for attachment in attachment_list:
-                        logger.info("Download file %s to %s", attachment['url'], attachment['file'])
-                        result = requests.get(attachment['url'], default_headers)
-                        pprint.pp(result)
+                        # Make sure that the download folder exists
+                        attachment_path.mkdir(parents=True, exist_ok=True)
+                        logger.info("Found attached file %s at %s", attached_file_name, attached_file_url)
+                        # Try to download
+                        if not try_download(attached_file_url,attachment_path / attached_file_name):
+                            failed_downloads.append({'url': attached_file_url, 'file': attached_file_name})
+                            
+                # Write failed downloads to file
+                if failed_downloads:
+                    with open(attachement_path / "missing_downloads.json", "w") as f:
+                        json.dump(failed_downloads, f, indent="\t")
                 issue_list.append({'issue': issue, 'timeline': flatten([event.json() for event in timeline])})
             with open(data_path / (repository['name'] + "_issues.json"), "w") as f:
         # 2.2.5 Dump releases
