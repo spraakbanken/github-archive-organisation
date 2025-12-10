@@ -76,7 +76,7 @@ if __name__ == '__main__':
     data_path : Path = Path(data_dir) / organisation / strftime("%Y%m%d-%H%M")
     data_path.mkdir(mode=0o755, parents=True, exist_ok=True)
 
-    # 2. Clone repositories and issues
+    # 2. Clone repositories and archive organisation
     # 2.1. List all repositories
     
     # repositories : list[requests.Response] = get_paginated("https://api.github.com/orgs/{}/repos".format(organisation),default_headers)
@@ -85,11 +85,12 @@ if __name__ == '__main__':
     repository_list : list[dict] = [{'name': repo['name'], 'url': repo['git_url'], 'has_issues': repo['has_issues'], 'has_wiki': repo['has_wiki'], 'json': repo} for response in repositories for repo in [response.json()] ] 
 
     
-    # 2.2. Clone repositories and dump issues
+    # 2.2. Clone repositories archive organisation
     for repository in repository_list:
-        # 2.2.1 Store repository infos
         with open(data_path / (repository['name'] + ".json"), "w") as f:
+        # 2.2.1 Archive repository infos
             json.dump(repository['json'], f, indent="\t")
+        # 2.2.2 Clone repositories
         # # 2.2.2 Clone repositories
         # clone_path : Path = data_path / repository['name']
         # clone_repo("ssh+" + repository['url'], clone_path)
@@ -98,7 +99,8 @@ if __name__ == '__main__':
         #     wiki_url = "ssh+" + repository['url'].replace('.git','.wiki.git')
         #     wiki_clone_path : Path = data_path / (repository['name'] + ".wiki")
         #     clone_repo(wiki_url,wiki_clone_path)
-        # 2.2.4 Dump issues
+        # 2.2.3 Clone wikis
+        # 2.2.4 Archive issues
         if repository['has_issues']:
             logger.info("Dump issues for %s", repository['name'])
             # List all issues (both open and closed)
@@ -130,6 +132,7 @@ if __name__ == '__main__':
                         pprint.pp(result)
                 issue_list.append({'issue': issue, 'timeline': flatten([event.json() for event in timeline])})
             with open(data_path / (repository['name'] + "_issues.json"), "w") as f:
+        # 2.2.5 Dump releases
                 json.dump(issue_list, f, indent="\t")
     # 3. Clone projects
     # get releases?
