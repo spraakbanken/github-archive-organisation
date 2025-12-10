@@ -103,7 +103,7 @@ if __name__ == '__main__':
         # 2.2.3 Clone wikis
         # 2.2.4 Archive issues
         if repository['has_issues']:
-            logger.info("Dump issues for %s", repository['name'])
+            logger.info("Archive issues for %s", repository['name'])
             # List all issues (both open and closed)
             issues : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues?state=all".format(organisation, repository['name']), headers=default_headers)
             issue_list : list[dict] = []
