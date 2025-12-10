@@ -50,6 +50,7 @@ def clone_repo(src : str ,dest : Path, git_parameters : list[str] = ["--mirror"]
     pprint.pp(result)
 
 def flatten(in_list : list) -> list:
+    """Flatten a list of lists"""
     out_list : list = []
     for element in in_list:
         if isinstance(element,list):
