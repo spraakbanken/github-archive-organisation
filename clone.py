@@ -138,7 +138,7 @@ if __name__ == '__main__':
                     with open(attachement_path / "missing_downloads.json", "w") as f:
                         json.dump(failed_downloads, f, indent="\t")
                 issue_list.append({'issue': issue, 'timeline': flatten([event.json() for event in timeline])})
-            with open(data_path / (repository['name'] + "_issues.json"), "w") as f:
+            with open(archive_path / "issues.json", "w") as f:
                 json.dump(issue_list, f, indent="\t")
         # 2.2.5 Dump releases
     # 3. Clone projects
