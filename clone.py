@@ -96,15 +96,11 @@ if __name__ == '__main__':
         # 2.2.2 Clone repositories
         clone_path : Path = data_path / repository['name']
         clone_repo("ssh+" + repository['url'], clone_path)
-        # # 2.2.2 Clone repositories
-        # clone_path : Path = data_path / repository['name']
-        # clone_repo("ssh+" + repository['url'], clone_path)
-        # # 2.2.3 Clone wikis
-        # if repository['has_wiki']:
-        #     wiki_url = "ssh+" + repository['url'].replace('.git','.wiki.git')
-        #     wiki_clone_path : Path = data_path / (repository['name'] + ".wiki")
-        #     clone_repo(wiki_url,wiki_clone_path)
         # 2.2.3 Clone wikis
+        if repository['has_wiki']:
+            wiki_url = "ssh+" + repository['url'].replace('.git','.wiki.git')
+            wiki_clone_path : Path = data_path / (repository['name'] + ".wiki")
+            clone_repo(wiki_url,wiki_clone_path)
         # 2.2.4 Archive issues
         if repository['has_issues']:
             logger.info("Archive issues for %s", repository['name'])
