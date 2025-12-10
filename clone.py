@@ -69,6 +69,7 @@ def try_download(url : str, outfile : str) -> None:
         return True
     else:
         return False
+
 if __name__ == '__main__':
     # 0. start
     logger.info("Start cloning %s", organisation)
