@@ -10,4 +10,4 @@ Python script to archive a complete organisation. It does the following
 - You need a Github access token with the following permissions
 <img width="1408" height="724" alt="Screenshot 2025-11-20 at 15-26-15 Fine-grained Personal Access Token" src="https://github.com/user-attachments/assets/160191ff-fb4c-40de-b174-02fc929b913c" />
 
-- It only requires the python `requests` package. See `requirements.txt`
+- It only requires the python `requests` package. See `requirements.txt` and install using `pip install -r requirements.txt`
