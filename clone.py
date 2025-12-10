@@ -88,10 +88,14 @@ if __name__ == '__main__':
     
     # 2.2. Clone repositories archive organisation
     for repository in repository_list:
-        with open(data_path / (repository['name'] + ".json"), "w") as f:
+        archive_path = data_path / "archive" / repository['name']
+        archive_path.mkdir(mode=0o755, parents=True, exist_ok=True)
         # 2.2.1 Archive repository infos
+        with open(archive_path / "repository.json", "w") as f:
             json.dump(repository['json'], f, indent="\t")
         # 2.2.2 Clone repositories
+        clone_path : Path = data_path / repository['name']
+        clone_repo("ssh+" + repository['url'], clone_path)
         # # 2.2.2 Clone repositories
         # clone_path : Path = data_path / repository['name']
         # clone_repo("ssh+" + repository['url'], clone_path)
