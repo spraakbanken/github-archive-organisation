@@ -129,9 +129,9 @@ if __name__ == '__main__':
                 failed_downloads: list[dict] = []
                 for comment in comments:
                     link_match = file_link_regex.search(comment["body"])
-                    attached_file_url = link_match.group(1)
-                    attached_file_name = link_match.group(2)
                     if link_match:
+                        attached_file_url = link_match.group(1)
+                        attached_file_name = link_match.group(2)
                         # Make sure that the download folder exists
                         attachment_path.mkdir(parents=True, exist_ok=True)
                         logger.info("Found attached file %s at %s", attached_file_name, attached_file_url)
