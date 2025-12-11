@@ -136,7 +136,7 @@ if __name__ == '__main__':
                             
                 # Write failed downloads to file
                 if failed_downloads:
-                    with open(attachement_path / "missing_downloads.json", "w") as f:
+                    with open(attachment_path / "missing_downloads.json", "w") as f:
                         json.dump(failed_downloads, f, indent="\t")
                 # Add issue to list
                 issue_list.append({'issue': issue, 'timeline': flatten([event.json() for event in timeline])})
