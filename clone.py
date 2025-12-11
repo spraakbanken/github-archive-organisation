@@ -22,8 +22,8 @@ data_dir : str = "/tmp/github"
 
 default_headers = {"Accept": "application/vnd.github+json",  "Authorization": "Bearer {}".format(token), "X-GitHub-Api-Version": "2022-11-28"}
 
-def get_paginated(url : str, headers: dict) -> list[requests.Response]:
-    """Loads data from the Github API, accessing all the pages"""
+def get_paginated(url : str, headers: dict) -> (list[requests.Response],list[dict]):
+    """Loads data from the Github API, accessing all the pages. Returns both the list of Response objects and the flattened list of JSON bodies"""
     logger.info("Load %s", url)
     responses : list[requests.Response] = []
     link_regex : re.Pattern = re.compile('<(https://.*?)>; rel="next"')
@@ -39,7 +39,7 @@ def get_paginated(url : str, headers: dict) -> list[requests.Response]:
                 response : requests.Response = requests.get(next_url, headers=headers)
                 responses.append(response)
                 urls += response.headers['Link'].split(', ')
-    return responses
+    return (responses,flatten([r.json() for r in responses]))
 
 def clone_repo(src : str ,dest : Path, git_parameters : list[str] = ["--mirror"], ssh_command : str = "ssh -o User=git") -> None:
     """Clones or fetch a git repository with optional list of parameter, default --mirror"""
@@ -112,23 +112,22 @@ if __name__ == '__main__':
         if repository['has_issues']:
             logger.info("Archive issues for %s", repository['name'])
             # List all issues (both open and closed)
-            issues : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues?state=all".format(organisation, repository['name']), headers=default_headers)
+            _,issues = get_paginated("https://api.github.com/repos/{}/{}/issues?state=all".format(organisation, repository['name']), headers=default_headers)
             issue_list : list[dict] = []
-            for issue in flatten([issue.json() for issue in issues]):
+            for issue in issues:
                 issue_number : int = issue['number']
                 # Get timeline
                 logger.info("Dump timeline for issue %d of %s", issue_number, repository['name'])
-                timeline : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/timeline".format(organisation, repository['name'],issue_number), headers=default_headers)
+                _,timeline = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/timeline".format(organisation, repository['name'],issue_number), headers=default_headers)
                 # get comments
                 logger.info("Dump comments for issue %d of %s", issue_number, repository['name'])
-                comments : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/comments".format(organisation, repository['name'],issue_number), headers=default_headers)
-                comment_list : list[dict] = flatten([comment.json() for comment in comments])
+                _,comments = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/comments".format(organisation, repository['name'],issue_number), headers=default_headers)
                 file_link_regex : re.Pattern = re.compile('\\((https://github.com/user-attachments/files/\\d+/([^)]+))\\)')
                 # get attachments
                 attachment_path = archive_path / "attachments"
                 attachment_path.mkdir(mode=0o755, parents=True, exist_ok=True)
                 failed_downloads: list[dict] = []
-                for comment in comment_list:
+                for comment in comments:
                     link_match = file_link_regex.search(comment["body"])
                     attached_file_url = link_match.group(1)
                     attached_file_name = link_match.group(2)
@@ -145,17 +144,17 @@ if __name__ == '__main__':
                     with open(attachment_path / "missing_downloads.json", "w") as f:
                         json.dump(failed_downloads, f, indent="\t")
                 # Add issue to list
-                issue_list.append({'issue': issue, 'timeline': flatten([event.json() for event in timeline])})
+                issue |= {'timeline': timeline}
+                issue_list.append(issue)
             # Write issues to file
             with open(archive_path / "issues.json", "w") as f:
                 json.dump(issue_list, f, indent="\t")
         # 2.2.5 Dump releases
-        releases : list[requests.Response] = get_paginated("https://api.github.com/repos/{}/{}/releases".format(organisation, repository['name']), headers=default_headers)
-        release_list : list[dict] = flatten([r.json() for r in releases])
+        _,releases = get_paginated("https://api.github.com/repos/{}/{}/releases".format(organisation, repository['name']), headers=default_headers)
         # save json
         with open(archive_path / "releases.json", "w") as f:
-            json.dump(release_list, f, indent="\t")
-        for release in release_list:
+            json.dump(releases, f, indent="\t")
+        for release in releases:
             failed_downloads: list[dict] = []
             release_path = archive_path / "releases" / release['tag_name']
             release_path.mkdir(mode=0o755, parents=True, exist_ok=True)
