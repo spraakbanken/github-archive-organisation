@@ -61,7 +61,7 @@ def flatten(in_list : list) -> list:
 
 def try_download(url : str, outfile : str) -> None:
     """Try to download a file from an url and keep track of the failures"""
-    logger.info("Try to download file %s to %s", attached_file_url, attached_file_name)
+    logger.info("Try to download file %s to %s", url, outfile)
     result : requests.Result = requests.get(url, headers=default_headers, stream=True)
     if result.status_code == 200:
         with open(outfile, "wb") as f:
