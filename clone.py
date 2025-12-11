@@ -175,5 +175,17 @@ if __name__ == '__main__':
                 with open(release_path / "missing_downloads.json", "w") as f:
                     json.dump(failed_downloads, f, indent="\t")
     # 3. Clone projects
-    # get releases?
+    _,projects = get_paginated("https://api.github.com/orgs/{}/projectsV2".format(organisation), headers=default_headers)
+    for project in projects:
+        # Get fields
+        _,fields = get_paginated("https://api.github.com/orgs/{}/projectsV2/{}/fields".format(organisation,project['number']), headers=default_headers)
+        project |= {'fields': fields}
+        # Get items
+        _,items = get_paginated("https://api.github.com/orgs/{}/projectsV2/{}/items".format(organisation,project['number']), headers=default_headers)
+        project |= {'items': items}
+        file_name = str(project['number']) + "_" + project['title'] + ".json"
+        projects_path : Path = data_path / "archive" / "projects"
+        projects_path.mkdir(mode=0o755, parents=True, exist_ok=True)
+        with open(projects_path / file_name, "w") as f:
+                json.dump(project, f, indent="\t")
     logger.info("Done")
