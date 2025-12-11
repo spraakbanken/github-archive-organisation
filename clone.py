@@ -42,12 +42,18 @@ def get_paginated(url : str, headers: dict) -> list[requests.Response]:
     return responses
 
 def clone_repo(src : str ,dest : Path, git_parameters : list[str] = ["--mirror"], ssh_command : str = "ssh -o User=git") -> None:
-    """Clones a git repository with optional list of parameter, default --mirror"""
-    git_command : list[str] = ["git", "clone"] + git_parameters + [src, dest.as_posix()]
-    logger.info("Clone %s into %s", src, dest)
+    """Clones or fetch a git repository with optional list of parameter, default --mirror"""
+    if dest.exists():
+        git_command : list[str] = ["git", "fetch"]
+        logger.info("Fetch into %s", dest)
+        working_dir = dest
+    else:
+        git_command : list[str] = ["git", "clone"] + git_parameters + [src, dest.as_posix()]
+        logger.info("Clone %s into %s", src, dest)
+        working_dir = None
     logger.info(' '.join(git_command))
-    result = subprocess.run(' '.join(git_command), shell=True,env={'GIT_SSH_COMMAND': ssh_command})
-    pprint.pp(result)
+    result = subprocess.run(' '.join(git_command), shell=True,env={'GIT_SSH_COMMAND': ssh_command}, cwd=working_dir)
+    return result
 
 def flatten(in_list : list) -> list:
     """Flatten a list of lists"""
