@@ -87,11 +87,8 @@ if __name__ == '__main__':
     # 2. Clone repositories and archive organisation
     # 2.1. List all repositories
     
-    # repositories : list[requests.Response] = get_paginated("https://api.github.com/orgs/{}/repos".format(organisation),headers=default_headers)
-    # repository_list : list[dict] = [{'name': repo['name'], 'url': repo['git_url'], 'has_issues': repo['has_issues'], 'has_wiki': repo['has_wiki'], 'json': repo} for response in repositories for repo in response.json() ]
-    repositories : list[requests.Response] = get_paginated("https://api.github.com/repos/spraakbanken/clone-test", headers=default_headers)
-    repository_list : list[dict] = [{'name': repo['name'], 'url': repo['git_url'], 'has_issues': repo['has_issues'], 'has_wiki': repo['has_wiki'], 'json': repo} for response in repositories for repo in [response.json()] ] 
-
+    _,repositories = get_paginated("https://api.github.com/orgs/{}/repos".format(organisation),headers=default_headers)
+    repository_list : list[dict] = [{'name': repo['name'], 'url': repo['git_url'], 'has_issues': repo['has_issues'], 'has_wiki': repo['has_wiki'], 'json': repo} for repo in repositories]
     
     # 2.2. Clone repositories archive organisation
     for repository in repository_list:
