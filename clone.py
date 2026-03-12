@@ -73,8 +73,14 @@ def clone_repo(src : str ,dest : Path, git_parameters : list[str] = ["--mirror"]
         logger.info("Clone %s into %s", src, dest)
         working_dir = None
     logger.info(' '.join(git_command))
+    # Intialize Git LFS
+    result = subprocess.run("git lfs install", shell=True)
+    # Clone or fetch the repository
     result = subprocess.run(' '.join(git_command), shell=True,env={'GIT_SSH_COMMAND': ssh_command}, cwd=working_dir)
-    return result
+    if dest.exists():
+        # Fetch LFS
+        result = subprocess.run("git lfs fetch --all", shell=True, cwd=dest)
+    return
 
 def flatten(in_list : list) -> list:
     """Flatten a list of lists"""
