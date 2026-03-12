@@ -10,17 +10,13 @@ from time import strftime
 from pathlib import Path
 import json
 
+import argparse
 import pprint
 
 log_format : str = '%(asctime)s:%(levelname)s:%(name)s: %(message)s'
 logger : logging.Logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format=log_format)
 
-organisation : str = "spraakbanken"
-token : str = os.environ["GITHUB_TOKEN"]
-data_dir : str = "/tmp/github"
 
-default_headers = {"Accept": "application/vnd.github+json",  "Authorization": "Bearer {}".format(token), "X-GitHub-Api-Version": "2022-11-28"}
 
 def get_paginated(url : str, headers: dict) -> (list[requests.Response],list[dict]):
     """Loads data from the Github API, accessing all the pages. Returns both the list of Response objects and the flattened list of JSON bodies"""
@@ -78,6 +74,34 @@ def try_download(url : str, outfile : str) -> None:
 
 if __name__ == '__main__':
     # 0. start
+    # Get token from environment if it exists
+    if "GITHUB_TOKEN" in os.environ:
+        token : str = os.environ["GITHUB_TOKEN"]
+    else:
+        token : str = ""
+    # parse command line
+    parser = argparse.ArgumentParser(
+                    prog='clone-org.py',
+                    description='Archives a Github organisation')
+    parser.add_argument('--organisation', help="The organisation to clone, defaults to \"spraakbanken\"", type=str, default="spraakbanken")
+    parser.add_argument('--data-dir', help="The output directory", type=str, required=True)
+    parser.add_argument('--token', help="The fine-grained Github access token, defaults to GITHUB_TOKEN environment variable", type=str, default=token)
+    parser.add_argument('--log-file', help="The log output file, defaults to clone.log", type=str, default="clone.log")
+    parser.add_argument('-d', '--debug',
+                    action='store_true')  # on/off flag
+    args = parser.parse_args()
+    organisation : str = args.organisation
+    token : str = args.token
+    data_dir : str = args.data_dir
+    
+    # Setup logging
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG, format=log_format)
+    else:
+        logging.basicConfig(level=logging.INFO, format=log_format, filename=args.log_file)
+
+    default_headers = {"Accept": "application/vnd.github+json",  "Authorization": "Bearer {}".format(token), "X-GitHub-Api-Version": "2022-11-28"}
+    
     logger.info("Start cloning %s", organisation)
 
     # 1. create output directory
