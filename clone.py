@@ -6,7 +6,7 @@ import re
 
 import logging
 
-from time import strftime
+from time import strftime, time, sleep
 from pathlib import Path
 import json
 
@@ -16,14 +16,37 @@ import pprint
 log_format : str = '%(asctime)s:%(levelname)s:%(name)s: %(message)s'
 logger : logging.Logger = logging.getLogger(__name__)
 
+def wait_for_reset(headers: dict) -> None:
+    """Waits for the reset of the rate limit"""
+    response : requests.Response = requests.get("https://api.github.com/rate_limit", headers=headers)
+    rate_limit_state = response.json()
+    logger.debug("Current rate limit: %s", str(rate_limit_state))
+    # Avoid waiting if the reset just happened and we actually have new API calls
+    if rate_limit_state['resources']['core']['remaining'] == 0:
+        wait_seconds = round(rate_limit_state['resources']['core']['reset']-time.time()+0.01)
+        logger.info("Wait for reset: %s seconds", str(wait_seconds))
+        sleep(wait_seconds)
+        return rate_limit_state['resources']['core']['limit']
+    else:
+        return rate_limit_state['resources']['core']['remaining'] 
 
+def rate_limited_request(url : str, headers: dict, rate_limit_calls : int) -> (requests.Response, int):
+    """Makes API calls respecting the rate limit by waiting for reseting of the limit if the number of calls exceeds it"""
+    if rate_limit_calls == 0:
+        rate_limit_calls = wait_for_reset(headers)
+    return (requests.get(url, headers=default_headers), rate_limit_calls-1)
 
 def get_paginated(url : str, headers: dict) -> (list[requests.Response],list[dict]):
-    """Loads data from the Github API, accessing all the pages. Returns both the list of Response objects and the flattened list of JSON bodies"""
+    """Loads data from the Github API, accessing all the pages. Returns both the list of Response objects and the flattened list of JSON bodies as well as the number of api calls"""
+    # Check the current rate limit
+    response : requests.Response = requests.get("https://api.github.com/rate_limit", headers=headers)
+    rate_limit_state = response.json()
+    logger.debug("Current rate limit: %s", str(rate_limit_state))
+    rate_limit_calls = rate_limit_state['resources']['core']['remaining']
     logger.info("Load %s", url)
     responses : list[requests.Response] = []
     link_regex : re.Pattern = re.compile('<(https://.*?)>; rel="next"')
-    response : requests.Response = requests.get(url, headers=default_headers)
+    (response, rate_limit_calls) = rate_limited_request(url, headers, rate_limit_calls)
     responses.append(response)
     if 'link' in response.headers:
         urls : list[str] = response.headers['Link'].split(', ')
@@ -32,7 +55,9 @@ def get_paginated(url : str, headers: dict) -> (list[requests.Response],list[dic
             if match:
                 next_url : str = match.group(1)
                 logger.info("Load %s", next_url)
-                response : requests.Response = requests.get(next_url, headers=headers)
+                if rate_limit_calls == 0:
+                    rate_limit_calls = wait_for_reset(headers)
+                (response, rate_limit_calls)  = rate_limited_request(next_url, headers, rate_limit_calls)
                 responses.append(response)
                 urls += response.headers['Link'].split(', ')
     return (responses,flatten([r.json() for r in responses]))
@@ -141,8 +166,7 @@ if __name__ == '__main__':
                 logger.info("Dump timeline for issue %d of %s", issue_number, repository['name'])
                 _,timeline = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/timeline".format(organisation, repository['name'],issue_number), headers=default_headers)
                 # get comments
-                logger.info("Dump comments for issue %d of %s", issue_number, repository['name'])
-                _,comments = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/comments".format(organisation, repository['name'],issue_number), headers=default_headers)
+                comments = [t["body"] for t in timeline if t["event"] == "commented" and "body" in t]
                 file_link_regex : re.Pattern = re.compile('\\((https://github.com/user-attachments/files/\\d+/([^)]+))\\)')
                 # get attachments
                 attachment_path = archive_path / "attachments"
