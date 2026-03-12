@@ -11,7 +11,6 @@ from pathlib import Path
 import json
 
 import argparse
-import pprint
 
 log_format : str = '%(asctime)s:%(levelname)s:%(name)s: %(message)s'
 logger : logging.Logger = logging.getLogger(__name__)
