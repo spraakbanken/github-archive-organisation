@@ -9,7 +9,6 @@ import logging
 from time import strftime, time, sleep
 from pathlib import Path
 import json
-import re
 
 import argparse
 
