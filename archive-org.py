@@ -115,6 +115,7 @@ if __name__ == '__main__':
                     description='Archives a Github organisation')
     parser.add_argument('--organisation', help="The organisation to archive, defaults to \"spraakbanken\"", type=str, default="spraakbanken")
     parser.add_argument('--data-dir', help="The output directory", type=str, required=True)
+    parser.add_argument('--use-date', help="Flag to include date in the output path or not, defaults to include date", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--token', help="The fine-grained Github access token, defaults to GITHUB_TOKEN environment variable", type=str, default=token)
     parser.add_argument('--log-file', help="The log output file, defaults to archive.log", type=str, default="archive.log")
     parser.add_argument('-d', '--debug',
@@ -135,7 +136,9 @@ if __name__ == '__main__':
     logger.info("Start cloning %s", organisation)
 
     # 1. create output directory
-    data_path : Path = Path(data_dir) / organisation / strftime("%Y%m%d-%H%M")
+    data_path : Path = Path(data_dir) / organisation
+    if args.use_date:
+        data_path = data_path / strftime("%Y%m%d-%H%M")
     data_path.mkdir(mode=0o755, parents=True, exist_ok=True)
 
     # 2. Archive repositories and archive organisation
