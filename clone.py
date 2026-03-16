@@ -111,12 +111,12 @@ if __name__ == '__main__':
         token : str = ""
     # parse command line
     parser = argparse.ArgumentParser(
-                    prog='clone-org.py',
+                    prog='archive-org.py',
                     description='Archives a Github organisation')
-    parser.add_argument('--organisation', help="The organisation to clone, defaults to \"spraakbanken\"", type=str, default="spraakbanken")
+    parser.add_argument('--organisation', help="The organisation to archive, defaults to \"spraakbanken\"", type=str, default="spraakbanken")
     parser.add_argument('--data-dir', help="The output directory", type=str, required=True)
     parser.add_argument('--token', help="The fine-grained Github access token, defaults to GITHUB_TOKEN environment variable", type=str, default=token)
-    parser.add_argument('--log-file', help="The log output file, defaults to clone.log", type=str, default="clone.log")
+    parser.add_argument('--log-file', help="The log output file, defaults to archive.log", type=str, default="archive.log")
     parser.add_argument('-d', '--debug',
                     action='store_true')  # on/off flag
     args = parser.parse_args()
@@ -138,13 +138,12 @@ if __name__ == '__main__':
     data_path : Path = Path(data_dir) / organisation / strftime("%Y%m%d-%H%M")
     data_path.mkdir(mode=0o755, parents=True, exist_ok=True)
 
-    # 2. Clone repositories and archive organisation
+    # 2. Archive repositories and archive organisation
     # 2.1. List all repositories
-    
     _,repositories = get_paginated("https://api.github.com/orgs/{}/repos".format(organisation),headers=default_headers)
     repository_list : list[dict] = [{'name': repo['name'], 'url': repo['git_url'], 'has_issues': repo['has_issues'], 'has_wiki': repo['has_wiki'], 'json': repo} for repo in repositories]
     
-    # 2.2. Clone repositories archive organisation
+    # 2.2. Clone repositories to archive organisation
     for repository in repository_list:
         archive_path = data_path / "archive" / repository['name']
         archive_path.mkdir(mode=0o755, parents=True, exist_ok=True)
@@ -224,7 +223,7 @@ if __name__ == '__main__':
             if failed_downloads:
                 with open(release_path / "missing_downloads.json", "w") as f:
                     json.dump(failed_downloads, f, indent="\t")
-    # 3. Clone projects
+    # 3. Archive projects
     _,projects = get_paginated("https://api.github.com/orgs/{}/projectsV2".format(organisation), headers=default_headers)
     for project in projects:
         # Get fields
