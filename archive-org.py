@@ -9,6 +9,7 @@ import logging
 from time import strftime, time, sleep
 from pathlib import Path
 import json
+import re
 
 import argparse
 
@@ -69,9 +70,9 @@ def clone_repo(src : str ,dest : Path, git_parameters : list[str] = ["--mirror"]
         working_dir = dest
     else:
         git_command : list[str] = ["git", "clone"] + git_parameters + [src, dest.as_posix()]
-        logger.info("Clone %s into %s", src, dest)
+        logger.info("Clone %s into %s", re.sub("(//git:).*@","\\1<token>@",src), dest)
         working_dir = None
-    logger.info(' '.join(git_command))
+    logger.debug(' '.join(git_command))
     # Intialize Git LFS
     result = subprocess.run("git lfs install", shell=True)
     # Clone or fetch the repository
@@ -116,6 +117,7 @@ if __name__ == '__main__':
     parser.add_argument('--organisation', help="The organisation to archive, defaults to \"spraakbanken\"", type=str, default="spraakbanken")
     parser.add_argument('--data-dir', help="The output directory", type=str, required=True)
     parser.add_argument('--use-date', help="Flag to include date in the output path or not, defaults to include date", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--use-ssh', help="Use SSH to clone Git repositories", action='store_true')
     parser.add_argument('--token', help="The fine-grained Github access token, defaults to GITHUB_TOKEN environment variable", type=str, default=token)
     parser.add_argument('--log-file', help="The log output file, defaults to archive.log", type=str, default="archive.log")
     parser.add_argument('-d', '--debug',
@@ -155,11 +157,21 @@ if __name__ == '__main__':
             json.dump(repository['json'], f, indent="\t")
         # 2.2.2 Clone repositories
         clone_path : Path = data_path / repository['name']
-        clone_repo("ssh+" + repository['url'], clone_path)
+        if args.use_ssh:
+            # Add SSH as Git protocol
+            clone_repo("ssh+" + repository['url'], clone_path)
+        else:
+            # Replace Git by HTTPS and add username/password
+            clone_repo(repository['url'].replace("git://","https://git:" + token + "@"), clone_path)
         # 2.2.3 Clone wikis
         if repository['has_wiki']:
-            wiki_url = "ssh+" + repository['url'].replace('.git','.wiki.git')
             wiki_clone_path : Path = data_path / (repository['name'] + ".wiki")
+            if args.use_ssh:
+            # Add SSH as Git protocol, change repo to wiki
+                wiki_url = "ssh+" + repository['url'].replace('.git','.wiki.git')
+            else:
+            # Replace Git by HTTPS and add username/password, change repo to wiki
+                wiki_url = repository['url'].replace("git://", "https://git:" + token + "@").replace('.git','.wiki.git')
             clone_repo(wiki_url,wiki_clone_path)
         # 2.2.4 Archive issues
         if repository['has_issues']:
