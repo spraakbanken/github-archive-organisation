@@ -184,7 +184,7 @@ if __name__ == '__main__':
                 logger.info("Dump timeline for issue %d of %s", issue_number, repository['name'])
                 _,timeline = get_paginated("https://api.github.com/repos/{}/{}/issues/{}/timeline".format(organisation, repository['name'],issue_number), headers=default_headers)
                 # get comments
-                comments = [t["body"] for t in timeline if t["event"] == "commented" and "body" in t]
+                comments = [t["body"] for t in timeline if "event" in t and t["event"] == "commented" and "body" in t]
                 file_link_regex : re.Pattern = re.compile('\\((https://github.com/user-attachments/files/\\d+/([^)]+))\\)')
                 # get attachments
                 attachment_path = archive_path / "attachments"
